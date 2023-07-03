@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package sample;
+
+option go_package = "github.com/vs49688/servicebase/cmd/empty/pb";
+
+message AmIATeapotRequest {}
+
+
+message AmIATeapotResponse {
+  bool Answer = 1;
+}
+
+service Teapot {
+  rpc AmIATeapot(AmIATeapotRequest) returns (AmIATeapotResponse);
+}
