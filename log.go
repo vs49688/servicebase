@@ -15,6 +15,7 @@
 package servicebase
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -34,7 +35,7 @@ type combinedLogRecord struct {
 	httpUserAgent         string
 }
 
-func (r *combinedLogRecord) Log(logger *log.Logger) {
+func (r *combinedLogRecord) Log(ctx context.Context, logger *log.Logger) {
 	var httpReferrer string
 	if r.httpReferrer == "" {
 		httpReferrer = "-"
@@ -69,7 +70,7 @@ func (r *combinedLogRecord) Log(logger *log.Logger) {
 		tzsign, tzhour, tzmin,
 	)
 
-	logger.Infof("%s - - [%s] \"%s %s %s\" %d %d \"%s\" \"%s\"\n",
+	logger.WithContext(ctx).Infof("%s - - [%s] \"%s %s %s\" %d %d \"%s\" \"%s\"\n",
 		r.ip, timeString,
 		r.method, r.uri, r.protocol,
 		r.status, r.responseBytes,
@@ -118,5 +119,5 @@ func (h *combinedLoggingHandler) ServeHTTP(rw http.ResponseWriter, r *http.Reque
 
 	h.handler.ServeHTTP(record, r)
 	record.time = time.Now()
-	record.Log(h.logger)
+	record.Log(r.Context(), h.logger)
 }
