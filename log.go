@@ -69,7 +69,7 @@ func (r *combinedLogRecord) Log(logger *log.Logger) {
 		tzsign, tzhour, tzmin,
 	)
 
-	log.Infof("%s - - [%s] \"%s %s %s\" %d %d \"%s\" \"%s\"\n",
+	logger.Infof("%s - - [%s] \"%s %s %s\" %d %d \"%s\" \"%s\"\n",
 		r.ip, timeString,
 		r.method, r.uri, r.protocol,
 		r.status, r.responseBytes,
