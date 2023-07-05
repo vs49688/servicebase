@@ -3,6 +3,7 @@ module github.com/vs49688/servicebase
 go 1.20
 
 require (
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0
 	github.com/prometheus/client_golang v1.16.0
