@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package servicebase
+package combinedlog
 
 import (
 	"context"
@@ -35,7 +35,7 @@ type combinedLogRecord struct {
 	httpUserAgent         string
 }
 
-func (r *combinedLogRecord) Log(ctx context.Context, logger *log.Logger) {
+func (r *combinedLogRecord) log(ctx context.Context, logger *log.Logger) {
 	var httpReferrer string
 	if r.httpReferrer == "" {
 		httpReferrer = "-"
@@ -95,7 +95,7 @@ type combinedLoggingHandler struct {
 	logger  *log.Logger
 }
 
-func NewCombinedLoggingHandler(handler http.Handler, logger *log.Logger) http.Handler {
+func NewHandler(handler http.Handler, logger *log.Logger) http.Handler {
 	return &combinedLoggingHandler{
 		handler: handler,
 		logger:  logger,
@@ -119,5 +119,5 @@ func (h *combinedLoggingHandler) ServeHTTP(rw http.ResponseWriter, r *http.Reque
 
 	h.handler.ServeHTTP(record, r)
 	record.time = time.Now()
-	record.Log(r.Context(), h.logger)
+	record.log(r.Context(), h.logger)
 }

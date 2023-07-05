@@ -28,6 +28,7 @@ import (
 	"github.com/sebest/xff"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/vs49688/servicebase/internal/middleware/combinedlog"
 	"github.com/vs49688/servicebase/multilistener"
 )
 
@@ -83,7 +84,7 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 		sw.serviceRouter.ServeHTTP(w, req)
 	})
 
-	handler = NewCombinedLoggingHandler(handler, sw.logger)
+	handler = combinedlog.NewHandler(handler, sw.logger)
 
 	if !cfg.HTTP.DisableXFF {
 		xfff, err := xff.New(xff.Options{AllowedSubnets: nil, Debug: false})
