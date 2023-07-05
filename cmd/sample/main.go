@@ -14,6 +14,8 @@ import (
 
 type sampleService struct {
 	pb.UnimplementedTeapotServer
+
+	logger *log.Logger
 }
 
 func (d *sampleService) Close(_ context.Context) error {
@@ -26,8 +28,9 @@ func (d *sampleService) GetHealth(_ context.Context) (*servicebase.GetHealthResp
 	}, nil
 }
 
-func (d *sampleService) AmIATeapot(_ context.Context, _ *pb.AmIATeapotRequest) (*pb.AmIATeapotResponse, error) {
+func (d *sampleService) AmIATeapot(ctx context.Context, _ *pb.AmIATeapotRequest) (*pb.AmIATeapotResponse, error) {
 	// grpcurl -plaintext localhost:50051 sample.Teapot.AmIATeapot
+	d.logger.WithContext(ctx).Info("im a teapot")
 	return &pb.AmIATeapotResponse{Answer: true}, nil
 }
 
@@ -38,7 +41,9 @@ func (d *sampleService) httpTeapot(w http.ResponseWriter, _ *http.Request) {
 
 func makeService(_ *servicebase.ServiceConfig) servicebase.ServiceFactory {
 	return func(ctx context.Context, params servicebase.ServiceParameters) (servicebase.Service, error) {
-		svc := &sampleService{}
+		svc := &sampleService{
+			logger: params.Logger,
+		}
 		params.ApplicationRouter.HandleFunc("/teapot", svc.httpTeapot)
 		pb.RegisterTeapotServer(params.GRPCRegistrar, svc)
 		return svc, nil
