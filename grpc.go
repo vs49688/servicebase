@@ -19,28 +19,44 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+
+	"github.com/vs49688/servicebase/internal/middleware/requestid"
 )
 
-func createGRPCServer(cfg *GRPCConfig, registry *prometheus.Registry) (*grpc.Server, error) {
+func createGRPCServer(cfg *ServiceConfig, registry *prometheus.Registry) (*grpc.Server, error) {
 	var metrics *grpcprommetrics.ServerMetrics
-	opts := cfg.Options
+	opts := cfg.GRPC.Options
 
-	if !cfg.DisableMetrics {
+	var unaryInterceptors []grpc.UnaryServerInterceptor
+	var streamInterceptors []grpc.StreamServerInterceptor
+
+	if !cfg.GRPC.DisableMetrics {
 		metrics = grpcprommetrics.NewServerMetrics()
 
-		opts = append(opts,
-			grpc.UnaryInterceptor(metrics.UnaryServerInterceptor()),
-			grpc.StreamInterceptor(metrics.StreamServerInterceptor()),
-		)
+		unaryInterceptors = append(unaryInterceptors, metrics.UnaryServerInterceptor())
+		streamInterceptors = append(streamInterceptors, metrics.StreamServerInterceptor())
+	}
+
+	if !cfg.DisableRequestID {
+		unaryInterceptors = append(unaryInterceptors, requestid.UnaryServerInterceptor)
+		streamInterceptors = append(streamInterceptors, requestid.StreamServerInterceptor)
+	}
+
+	if len(unaryInterceptors) > 0 {
+		opts = append(opts, grpc.ChainUnaryInterceptor(unaryInterceptors...))
+	}
+
+	if len(streamInterceptors) > 0 {
+		opts = append(opts, grpc.ChainStreamInterceptor(streamInterceptors...))
 	}
 
 	srv := grpc.NewServer(opts...)
 
-	if cfg.EnableReflection {
+	if cfg.GRPC.EnableReflection {
 		reflection.Register(srv)
 	}
 
-	if !cfg.DisableMetrics {
+	if !cfg.GRPC.DisableMetrics {
 		metrics.InitializeMetrics(srv)
 
 		if err := registry.Register(metrics); err != nil {

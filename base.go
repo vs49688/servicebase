@@ -29,6 +29,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/vs49688/servicebase/internal/middleware/combinedlog"
+	"github.com/vs49688/servicebase/internal/middleware/requestid"
 	"github.com/vs49688/servicebase/multilistener"
 )
 
@@ -47,6 +48,10 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 	sw.logger = log.New()
 	if lvl, err := log.ParseLevel(cfg.LogLevel); err == nil {
 		sw.logger.SetLevel(lvl)
+	}
+
+	if !cfg.DisableRequestID {
+		sw.logger.AddHook(requestid.NewLoggerHook(requestid.DefaultLoggerFieldName))
 	}
 
 	sw.multiListener = multilistener.New(sw.logger)
@@ -85,6 +90,10 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 	})
 
 	handler = combinedlog.NewHandler(handler, sw.logger)
+
+	if !cfg.DisableRequestID {
+		handler = requestid.NewHandler(handler)
+	}
 
 	if !cfg.HTTP.DisableXFF {
 		xfff, err := xff.New(xff.Options{AllowedSubnets: nil, Debug: false})
@@ -128,7 +137,7 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 	}
 
 	// Create the GRPC server
-	sw.grpcServer, err = createGRPCServer(&cfg.GRPC, sw.metrics.Registry)
+	sw.grpcServer, err = createGRPCServer(&cfg, sw.metrics.Registry)
 	if err != nil {
 		log.WithError(err).Error("error creating grpc server")
 		return err

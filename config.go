@@ -54,11 +54,14 @@ type GRPCConfig struct {
 }
 
 type ServiceConfig struct {
-	LogLevel        string        `json:"log_level,omitempty"`
-	LogFormat       string        `json:"log_format,omitempty"`
-	ShutdownTimeout time.Duration `json:"shutdown_timeout"`
-	HTTP            HTTPConfig    `json:"http"`
-	GRPC            GRPCConfig    `json:"grpc"`
+	LogLevel         string        `json:"log_level,omitempty"`
+	LogFormat        string        `json:"log_format,omitempty"`
+	ShutdownTimeout  time.Duration `json:"shutdown_timeout"`
+	HTTP             HTTPConfig    `json:"http"`
+	GRPC             GRPCConfig    `json:"grpc"`
+	DisableRequestID bool          `json:"disable_request_id"`
+
+	hasDisableRequestID bool
 }
 
 func DefaultHTTPConfig() HTTPConfig {
@@ -270,6 +273,17 @@ func (cfg *ServiceConfig) Flags() []cli.Flag {
 
 	flags = append(flags, cfg.HTTP.Flags()...)
 	flags = append(flags, cfg.GRPC.Flags()...)
+	flags = append(flags, &cli.BoolFlag{
+		Name:    "disable-request-id",
+		Usage:   "disable request id handling (for both HTTP and GRPC)",
+		EnvVars: []string{"SERVICE_DISABLE_REQUEST_ID"},
+		Value:   def.DisableRequestID,
+		Action: func(context *cli.Context, b bool) error {
+			cfg.DisableRequestID = b
+			cfg.hasDisableRequestID = true
+			return nil
+		},
+	})
 	return flags
 }
 
@@ -303,6 +317,11 @@ func MergeServiceConfig(left, right *ServiceConfig) *ServiceConfig {
 
 	MergeHTTPConfig(&left.HTTP, &right.HTTP)
 	MergeGRPCConfig(&left.GRPC, &right.GRPC)
+
+	if right.hasDisableRequestID {
+		left.DisableRequestID = right.DisableRequestID
+	}
+
 	return left
 }
 
