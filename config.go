@@ -22,35 +22,74 @@ import (
 )
 
 type ListenConfig struct {
-	Enabled           bool     `json:"enabled"`
+	Enabled           *bool    `json:"enabled,omitempty"`
 	BindAddress       string   `json:"bind_address,omitempty"`
 	BindNetwork       string   `json:"bind_network,omitempty"`
 	SocketPermissions FileMode `json:"socket_permissions,omitempty"`
+}
 
-	hasEnabled bool
+func (l *ListenConfig) IsEnabled() bool {
+	if l.Enabled == nil {
+		return false
+	}
+
+	return *l.Enabled
 }
 
 type HTTPConfig struct {
 	ListenConfig
 	PathPrefix        string        `json:"path_prefix,omitempty"`
-	DisableXFF        bool          `json:"disable_xff,omitempty"`
-	DisableMetrics    bool          `json:"disable_metrics"`
-	DisableHealth     bool          `json:"disable_health"`
+	DisableXFF        *bool         `json:"disable_xff,omitempty"`
+	DisableMetrics    *bool         `json:"disable_metrics"`
+	DisableHealth     *bool         `json:"disable_health"`
 	ReadHeaderTimeout time.Duration `json:"read_header_timeout"`
+}
 
-	hasDisableXFF     bool
-	hasDisableMetrics bool
-	hasDisableHealth  bool
+func (cfg *HTTPConfig) GetDisableXFF() bool {
+	if cfg == nil || cfg.DisableXFF == nil {
+		return false
+	}
+
+	return *cfg.DisableXFF
+}
+
+func (cfg *HTTPConfig) GetDisableMetrics() bool {
+	if cfg == nil || cfg.DisableMetrics == nil {
+		return false
+	}
+
+	return *cfg.DisableMetrics
+}
+
+func (cfg *HTTPConfig) GetDisableHealth() bool {
+	if cfg == nil || cfg.DisableHealth == nil {
+		return false
+	}
+
+	return *cfg.DisableHealth
 }
 
 type GRPCConfig struct {
 	ListenConfig
-	DisableMetrics   bool                `json:"disable_metrics"`
-	EnableReflection bool                `json:"enable_reflection"`
+	DisableMetrics   *bool               `json:"disable_metrics,omitempty"`
+	EnableReflection *bool               `json:"enable_reflection,omitempty"`
 	Options          []grpc.ServerOption `json:"-"` // TODO: Make this configurable from JSON/command line
+}
 
-	hasDisableMetrics   bool
-	hasEnableReflection bool
+func (cfg *GRPCConfig) GetDisableMetrics() bool {
+	if cfg == nil || cfg.DisableMetrics == nil {
+		return false
+	}
+
+	return *cfg.DisableMetrics
+}
+
+func (cfg *GRPCConfig) GetEnableReflection() bool {
+	if cfg == nil || cfg.EnableReflection == nil {
+		return false
+	}
+
+	return *cfg.EnableReflection
 }
 
 type ServiceConfig struct {
@@ -59,23 +98,29 @@ type ServiceConfig struct {
 	ShutdownTimeout  time.Duration `json:"shutdown_timeout"`
 	HTTP             HTTPConfig    `json:"http"`
 	GRPC             GRPCConfig    `json:"grpc"`
-	DisableRequestID bool          `json:"disable_request_id"`
+	DisableRequestID *bool         `json:"disable_request_id,omitempty"`
+}
 
-	hasDisableRequestID bool
+func (cfg *ServiceConfig) GetDisableRequestID() bool {
+	if cfg == nil || cfg.DisableRequestID == nil {
+		return false
+	}
+
+	return *cfg.DisableRequestID
 }
 
 func DefaultHTTPConfig() HTTPConfig {
 	return HTTPConfig{
 		ListenConfig: ListenConfig{
-			Enabled:           true,
+			Enabled:           AsPtr(true),
 			BindNetwork:       "tcp",
 			BindAddress:       "127.0.0.1:8080",
 			SocketPermissions: 0600,
 		},
 		PathPrefix:        "",
-		DisableXFF:        false,
-		DisableMetrics:    false,
-		DisableHealth:     false,
+		DisableXFF:        AsPtr(false),
+		DisableMetrics:    AsPtr(false),
+		DisableHealth:     AsPtr(false),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 }
@@ -87,10 +132,9 @@ func (cfg *HTTPConfig) Flags() []cli.Flag {
 			Name:    "http-enabled",
 			Usage:   "http server enabled",
 			EnvVars: []string{"HTTP_ENABLED"},
-			Value:   def.Enabled,
+			Value:   def.IsEnabled(),
 			Action: func(context *cli.Context, b bool) error {
-				cfg.Enabled = b
-				cfg.hasEnabled = true
+				cfg.Enabled = AsPtr(b)
 				return nil
 			},
 		},
@@ -129,11 +173,9 @@ func (cfg *HTTPConfig) Flags() []cli.Flag {
 			Name:    "http-disable-xff",
 			Usage:   "disable X-Forwarded-For handling",
 			EnvVars: []string{"HTTP_DISABLE_XFF"},
-			//Destination: &cfg.DisableXFF,
-			Value: def.DisableXFF,
+			Value:   def.GetDisableXFF(),
 			Action: func(context *cli.Context, b bool) error {
-				cfg.DisableXFF = b
-				cfg.hasDisableXFF = true
+				cfg.DisableXFF = AsPtr(b)
 				return nil
 			},
 		},
@@ -141,10 +183,9 @@ func (cfg *HTTPConfig) Flags() []cli.Flag {
 			Name:    "http-disable-metrics",
 			Usage:   "disable /metrics endpoint",
 			EnvVars: []string{"HTTP_DISABLE_METRICS"},
-			Value:   def.DisableMetrics,
+			Value:   def.GetDisableMetrics(),
 			Action: func(context *cli.Context, b bool) error {
-				cfg.DisableMetrics = b
-				cfg.hasDisableMetrics = true
+				cfg.DisableMetrics = AsPtr(b)
 				return nil
 			},
 		},
@@ -152,10 +193,9 @@ func (cfg *HTTPConfig) Flags() []cli.Flag {
 			Name:    "http-disable-health",
 			Usage:   "disable /health endpoint",
 			EnvVars: []string{"HTTP_DISABLE_HEALTH"},
-			Value:   def.DisableHealth,
+			Value:   def.GetDisableHealth(),
 			Action: func(context *cli.Context, b bool) error {
-				cfg.DisableHealth = b
-				cfg.hasDisableHealth = true
+				cfg.DisableHealth = AsPtr(b)
 				return nil
 			},
 		},
@@ -172,13 +212,13 @@ func (cfg *HTTPConfig) Flags() []cli.Flag {
 func DefaultGRPCConfig() GRPCConfig {
 	return GRPCConfig{
 		ListenConfig: ListenConfig{
-			Enabled:           true,
+			Enabled:           AsPtr(true),
 			BindNetwork:       "tcp",
 			BindAddress:       "127.0.0.1:50051",
 			SocketPermissions: 0600,
 		},
-		DisableMetrics:   false,
-		EnableReflection: false,
+		DisableMetrics:   AsPtr(false),
+		EnableReflection: AsPtr(false),
 	}
 }
 
@@ -189,10 +229,9 @@ func (cfg *GRPCConfig) Flags() []cli.Flag {
 			Name:    "grpc-enabled",
 			Usage:   "grpc server enabled",
 			EnvVars: []string{"GRPC_ENABLED"},
-			Value:   def.Enabled,
+			Value:   def.IsEnabled(),
 			Action: func(context *cli.Context, b bool) error {
-				cfg.Enabled = b
-				cfg.hasEnabled = true
+				cfg.Enabled = AsPtr(b)
 				return nil
 			},
 		},
@@ -223,10 +262,9 @@ func (cfg *GRPCConfig) Flags() []cli.Flag {
 			Name:    "grpc-disable-metrics",
 			Usage:   "disable /metrics endpoint",
 			EnvVars: []string{"GRPC_DISABLE_METRICS"},
-			Value:   def.DisableMetrics,
+			Value:   def.GetDisableMetrics(),
 			Action: func(context *cli.Context, b bool) error {
-				cfg.DisableMetrics = b
-				cfg.hasDisableMetrics = true
+				cfg.DisableMetrics = AsPtr(b)
 				return nil
 			},
 		},
@@ -277,10 +315,9 @@ func (cfg *ServiceConfig) Flags() []cli.Flag {
 		Name:    "disable-request-id",
 		Usage:   "disable request id handling (for both HTTP and GRPC)",
 		EnvVars: []string{"SERVICE_DISABLE_REQUEST_ID"},
-		Value:   def.DisableRequestID,
+		Value:   def.GetDisableRequestID(),
 		Action: func(context *cli.Context, b bool) error {
-			cfg.DisableRequestID = b
-			cfg.hasDisableRequestID = true
+			cfg.DisableRequestID = AsPtr(b)
 			return nil
 		},
 	})
@@ -318,8 +355,8 @@ func MergeServiceConfig(left, right *ServiceConfig) *ServiceConfig {
 	MergeHTTPConfig(&left.HTTP, &right.HTTP)
 	MergeGRPCConfig(&left.GRPC, &right.GRPC)
 
-	if right.hasDisableRequestID {
-		left.DisableRequestID = right.DisableRequestID
+	if right.DisableRequestID != nil {
+		left.DisableRequestID = AsPtr(*right.DisableRequestID)
 	}
 
 	return left
@@ -332,8 +369,8 @@ func MergeListenConfig(left, right *ListenConfig) *ListenConfig {
 		left.SocketPermissions = right.SocketPermissions
 	}
 
-	if right.hasEnabled {
-		left.Enabled = right.Enabled
+	if right.Enabled != nil {
+		left.Enabled = AsPtr(*right.Enabled)
 	}
 
 	return left
@@ -342,8 +379,17 @@ func MergeListenConfig(left, right *ListenConfig) *ListenConfig {
 func MergeHTTPConfig(left, right *HTTPConfig) *HTTPConfig {
 	MergeListenConfig(&left.ListenConfig, &right.ListenConfig)
 	left.PathPrefix = MergeString(left.PathPrefix, right.PathPrefix)
-	if right.hasDisableXFF {
-		left.DisableXFF = right.DisableXFF
+
+	if right.DisableXFF != nil {
+		left.DisableXFF = AsPtr(*right.DisableXFF)
+	}
+
+	if right.DisableMetrics != nil {
+		left.DisableMetrics = AsPtr(*right.DisableMetrics)
+	}
+
+	if right.DisableHealth != nil {
+		left.DisableHealth = AsPtr(*right.DisableHealth)
 	}
 
 	if right.ReadHeaderTimeout != 0 {
@@ -356,12 +402,12 @@ func MergeHTTPConfig(left, right *HTTPConfig) *HTTPConfig {
 func MergeGRPCConfig(left, right *GRPCConfig) *GRPCConfig {
 	MergeListenConfig(&left.ListenConfig, &right.ListenConfig)
 
-	if right.hasDisableMetrics {
-		left.DisableMetrics = right.DisableMetrics
+	if right.DisableMetrics != nil {
+		left.DisableMetrics = AsPtr(*right.DisableMetrics)
 	}
 
-	if right.hasEnableReflection {
-		left.EnableReflection = right.EnableReflection
+	if right.EnableReflection != nil {
+		left.EnableReflection = AsPtr(*right.EnableReflection)
 	}
 
 	return left

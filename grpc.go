@@ -30,14 +30,14 @@ func createGRPCServer(cfg *ServiceConfig, registry *prometheus.Registry) (*grpc.
 	var unaryInterceptors []grpc.UnaryServerInterceptor
 	var streamInterceptors []grpc.StreamServerInterceptor
 
-	if !cfg.GRPC.DisableMetrics {
+	if !cfg.GRPC.GetDisableMetrics() {
 		metrics = grpcprommetrics.NewServerMetrics()
 
 		unaryInterceptors = append(unaryInterceptors, metrics.UnaryServerInterceptor())
 		streamInterceptors = append(streamInterceptors, metrics.StreamServerInterceptor())
 	}
 
-	if !cfg.DisableRequestID {
+	if !cfg.GetDisableRequestID() {
 		unaryInterceptors = append(unaryInterceptors, requestid.UnaryServerInterceptor)
 		streamInterceptors = append(streamInterceptors, requestid.StreamServerInterceptor)
 	}
@@ -52,11 +52,11 @@ func createGRPCServer(cfg *ServiceConfig, registry *prometheus.Registry) (*grpc.
 
 	srv := grpc.NewServer(opts...)
 
-	if cfg.GRPC.EnableReflection {
+	if cfg.GRPC.GetEnableReflection() {
 		reflection.Register(srv)
 	}
 
-	if !cfg.GRPC.DisableMetrics {
+	if !cfg.GRPC.GetDisableMetrics() {
 		metrics.InitializeMetrics(srv)
 
 		if err := registry.Register(metrics); err != nil {

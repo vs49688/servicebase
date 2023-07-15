@@ -25,32 +25,27 @@ func TestConfigMerging(t *testing.T) {
 	t.Run("DisableXFF", func(t *testing.T) {
 		t.Parallel()
 		t.Run("true", func(t *testing.T) {
-			left := &HTTPConfig{
-				DisableXFF: false,
-			}
+			left := &HTTPConfig{}
 
 			right := &HTTPConfig{
-				DisableXFF:    true,
-				hasDisableXFF: true,
+				DisableXFF: AsPtr(true),
 			}
 
 			MergeHTTPConfig(left, right)
 
-			assert.Equal(t, &HTTPConfig{DisableXFF: true}, left)
+			assert.Equal(t, &HTTPConfig{DisableXFF: AsPtr(true)}, left)
 		})
 
 		t.Run("NotSpecified", func(t *testing.T) {
 			left := &HTTPConfig{
-				DisableXFF: true,
+				DisableXFF: AsPtr(true),
 			}
 
-			right := &HTTPConfig{
-				DisableXFF: false, // Same as not-sepecified
-			}
+			right := &HTTPConfig{}
 
 			MergeHTTPConfig(left, right)
 
-			assert.Equal(t, &HTTPConfig{DisableXFF: true}, left)
+			assert.Equal(t, &HTTPConfig{DisableXFF: AsPtr(true)}, left)
 		})
 	})
 

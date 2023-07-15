@@ -50,7 +50,7 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 		sw.logger.SetLevel(lvl)
 	}
 
-	if !cfg.DisableRequestID {
+	if !cfg.GetDisableRequestID() {
 		sw.logger.AddHook(requestid.NewLoggerHook(requestid.DefaultLoggerFieldName))
 	}
 
@@ -91,11 +91,11 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 
 	handler = combinedlog.NewHandler(handler, sw.logger)
 
-	if !cfg.DisableRequestID {
+	if !cfg.GetDisableRequestID() {
 		handler = requestid.NewHandler(handler)
 	}
 
-	if !cfg.HTTP.DisableXFF {
+	if !cfg.HTTP.GetDisableXFF() {
 		xfff, err := xff.New(xff.Options{AllowedSubnets: nil, Debug: false})
 		if err != nil {
 			sw.logger.WithError(err).Error("xff_creation_failed")
@@ -127,12 +127,12 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 	// Register the /health and /metrics endponts. This must be done before the
 	// service factory is called, so they can't override them. checkHealth() requires
 	// a Service instance, so reserve just the route.
-	if !cfg.HTTP.DisableMetrics {
+	if !cfg.HTTP.GetDisableMetrics() {
 		sw.serviceRouter.Handle("/metrics", metricsHandler).Methods(http.MethodGet)
 	}
 
 	var healthRouter *mux.Route
-	if !cfg.HTTP.DisableHealth {
+	if !cfg.HTTP.GetDisableHealth() {
 		healthRouter = sw.serviceRouter.Path("/health").Methods(http.MethodGet)
 	}
 
@@ -164,7 +164,7 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 
 	// Finally, handle enables.
 	// We still create the actual server objects because initialisation code may rely on it.
-	if cfg.HTTP.Enabled {
+	if cfg.HTTP.IsEnabled() {
 		err = sw.multiListener.ListenHTTP(&multilistener.ListenConfig{
 			BindAddress:       cfg.HTTP.BindAddress,
 			BindNetwork:       cfg.HTTP.BindNetwork,
@@ -175,7 +175,7 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 		}
 	}
 
-	if cfg.GRPC.Enabled {
+	if cfg.GRPC.IsEnabled() {
 		err = sw.multiListener.ListenGRPC(&multilistener.ListenConfig{
 			BindAddress:       cfg.GRPC.BindAddress,
 			BindNetwork:       cfg.GRPC.BindNetwork,

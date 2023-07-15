@@ -52,7 +52,7 @@ func makeService(_ *servicebase.ServiceConfig) servicebase.ServiceFactory {
 
 func main() {
 	cfg := servicebase.DefaultServiceConfig()
-	cfg.GRPC.EnableReflection = true
+	cfg.GRPC.EnableReflection = servicebase.AsPtr(true)
 
 	app := &cli.App{
 		Name:                   "servicebase-sample",
