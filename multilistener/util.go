@@ -16,6 +16,7 @@ package multilistener
 
 import (
 	"net"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -33,16 +34,12 @@ func Listen(cfg *ListenConfig, logger *log.Logger) (net.Listener, error) {
 		return nil, err
 	}
 
-	if unix, ok := ln.(*net.UnixListener); ok {
+	if _, ok := ln.(*net.UnixListener); ok {
 		logEntry.Trace("fixing socket permissions")
 
-		socket, err := unix.File()
-		if err != nil {
-			logEntry.WithError(err).Error("unable to retrieve socket")
-			return nil, err
-		}
-
-		if err := socket.Chmod(cfg.SocketPermissions); err != nil {
+		// Can't use the *os.File returned from the listener, it doesn't work.
+		// We have to do it via name.
+		if err := os.Chmod(cfg.BindAddress, cfg.SocketPermissions); err != nil {
 			logEntry.WithError(err).Error("unable to chmod socket")
 			return nil, err
 		}
