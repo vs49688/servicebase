@@ -103,6 +103,17 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 		}
 
 		handler = xfff.Handler(handler)
+
+		// UNIX sockets have "@" as a RemoteAddr, and xfff can't handle it.
+		handler = func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if req.RemoteAddr == "@" {
+					req.RemoteAddr = "127.0.0.1:0"
+				}
+
+				h.ServeHTTP(w, req)
+			})
+		}(handler)
 	}
 
 	sw.httpServer = &http.Server{
