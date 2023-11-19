@@ -50,10 +50,14 @@ func (mode FileMode) MarshalText() ([]byte, error) {
 	return []byte(strconv.FormatInt(int64(mode), 8)), nil
 }
 
-type Service interface {
-	Close(ctx context.Context) error
-
+type HealthCheckable interface {
 	GetHealth(ctx context.Context) (*GetHealthResponse, error)
+}
+
+type Service interface {
+	HealthCheckable
+
+	Close(ctx context.Context) error
 }
 
 type ServiceParameters struct {
