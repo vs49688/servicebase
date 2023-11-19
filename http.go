@@ -37,7 +37,10 @@ type HTTPHealthResponse struct {
 	Output string           `json:"output,omitempty"`
 }
 
-const ContentTypeTextPlainUTF8 = "text/plain; charset=utf-8"
+const (
+	ContentTypeTextPlainUTF8       = "text/plain; charset=utf-8"
+	ContentTypeApplicationJSONUTF8 = "application/json; charset=utf-8"
+)
 
 func NotFoundHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
