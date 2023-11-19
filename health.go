@@ -22,10 +22,10 @@ import (
 type HealthStatus string
 
 const (
-	HealthStatusUnknown   = "unknown"
-	HealthStatusHealthy   = "healthy"
-	HealthStatusDegraded  = "degraded"
-	HealthStatusUnhealthy = "unhealthy"
+	HealthStatusUnknown   HealthStatus = "unknown"
+	HealthStatusHealthy   HealthStatus = "healthy"
+	HealthStatusDegraded  HealthStatus = "degraded"
+	HealthStatusUnhealthy HealthStatus = "unhealthy"
 )
 
 type GetHealthResponse struct {
