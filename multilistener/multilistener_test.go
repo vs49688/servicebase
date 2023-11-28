@@ -16,20 +16,23 @@ package multilistener
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
 func TestListen(t *testing.T) {
-	logger := logrus.StandardLogger()
-	logger.SetLevel(logrus.TraceLevel)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
+
 	xx := New(logger)
 	defer func() {
 		err := xx.Close()
@@ -85,8 +88,10 @@ func TestListen(t *testing.T) {
 }
 
 func TestListenWithoutServe(t *testing.T) {
-	logger := logrus.StandardLogger()
-	logger.SetLevel(logrus.TraceLevel)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
+
 	xx := New(logger)
 	defer func() {
 		err := xx.Close()

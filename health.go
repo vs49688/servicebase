@@ -15,7 +15,7 @@
 package servicebase
 
 import (
-	log "github.com/sirupsen/logrus"
+	"log/slog"
 	"net/http"
 )
 
@@ -52,13 +52,13 @@ func healthStatusToHTTP(r *GetHealthResponse) HTTPHealthResponse {
 	return hr
 }
 
-func checkHealth(impl Service, logger *log.Logger) http.HandlerFunc {
+func checkHealth(impl Service, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var hr HTTPHealthResponse
 
 		r, err := impl.GetHealth(req.Context())
 		if err != nil || r == nil {
-			logger.WithError(err).Error("health check failed")
+			logger.Error("health check failed", slog.Any("error", err))
 			hr = HTTPHealthResponse{
 				Status: HTTPHealthStatusFail,
 				Notes:  []string{"health check failed"},

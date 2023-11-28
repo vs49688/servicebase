@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
-	log "github.com/sirupsen/logrus"
 	"github.com/vs49688/servicebase/multilistener"
 	"google.golang.org/grpc"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"strconv"
 )
@@ -61,7 +61,7 @@ type Service interface {
 }
 
 type ServiceParameters struct {
-	Logger  *log.Logger
+	Logger  *slog.Logger
 	Metrics Metrics
 
 	// ServiceRouter is the top-level HTTP router, without the path prefix applied.
@@ -77,7 +77,7 @@ type ServiceParameters struct {
 type ServiceFactory func(ctx context.Context, params ServiceParameters) (Service, error)
 
 type serviceBase struct {
-	logger            *log.Logger
+	logger            *slog.Logger
 	multiListener     *multilistener.MultiListener
 	metrics           Metrics
 	serviceRouter     *mux.Router

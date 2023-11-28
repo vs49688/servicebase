@@ -17,17 +17,16 @@ package multilistener
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type httpWrapper struct {
-	srv      *http.Server
-	lis      net.Listener
-	logEntry *log.Entry
+	srv    *http.Server
+	lis    net.Listener
+	logger *slog.Logger
 }
 
 func (w *httpWrapper) Serve(ctx context.Context) error {
@@ -60,8 +59,8 @@ func (w *httpWrapper) Serve(ctx context.Context) error {
 	return err
 }
 
-func (w *httpWrapper) Log() *log.Entry {
-	return w.logEntry
+func (w *httpWrapper) Log() *slog.Logger {
+	return w.logger
 }
 
 func (w *httpWrapper) Close() error {
@@ -75,9 +74,9 @@ func (l *MultiListener) ListenHTTP(cfg *ListenConfig, srv *http.Server) error {
 	}
 
 	l.servers = append(l.servers, &httpWrapper{
-		srv:      srv,
-		lis:      lis,
-		logEntry: l.logger.WithField("index", len(l.servers)),
+		srv:    srv,
+		lis:    lis,
+		logger: l.logger.With(slog.Int("index", len(l.servers))),
 	})
 	return nil
 }

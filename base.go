@@ -17,6 +17,7 @@ package servicebase
 import (
 	"context"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,46 +27,44 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sebest/xff"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/vs49688/servicebase/internal/middleware/combinedlog"
 	"github.com/vs49688/servicebase/internal/middleware/requestid"
 	"github.com/vs49688/servicebase/multilistener"
 )
 
-func closeService(ctx context.Context, impl Service, timeout time.Duration, logger *log.Logger) {
+func closeService(ctx context.Context, impl Service, timeout time.Duration, logger *slog.Logger) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	if err := impl.Close(ctx); err != nil {
-		logger.WithError(err).Error("service cleanup failed")
+		logger.Error("service cleanup failed", slog.Any("error", err))
 	}
 }
 
 func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) error {
 	sw := &serviceBase{}
 
-	sw.logger = log.New()
-	if lvl, err := log.ParseLevel(cfg.LogLevel); err == nil {
-		sw.logger.SetLevel(lvl)
+	var logHandler slog.Handler
+	hopts := slog.HandlerOptions{Level: cfg.LogLevel}
+	if cfg.LogFormat == LogFormatJSON {
+		logHandler = slog.NewJSONHandler(os.Stdout, &hopts)
+	} else {
+		logHandler = slog.NewTextHandler(os.Stdout, &hopts)
 	}
 
 	if !cfg.DisableRequestID {
-		sw.logger.AddHook(requestid.NewLoggerHook(requestid.DefaultLoggerFieldName))
+		logHandler = requestid.NewLogHandler(requestid.DefaultLoggerFieldName, logHandler)
 	}
+
+	sw.logger = slog.New(logHandler)
 
 	sw.multiListener = multilistener.New(sw.logger)
 	defer func() {
 		if err := sw.multiListener.Close(); err != nil {
-			sw.logger.WithError(err).Error("error_closing_listeners")
+			sw.logger.Error("error closing listeners", slog.Any("error", err))
 		}
 	}()
-
-	if cfg.LogFormat == LogFormatJSON {
-		sw.logger.SetFormatter(&log.JSONFormatter{})
-	} else {
-		sw.logger.SetFormatter(&log.TextFormatter{})
-	}
 
 	// Create our internal, top-level router
 	sw.serviceRouter = mux.NewRouter()
@@ -98,7 +97,7 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 	if !cfg.HTTP.DisableXFF {
 		xfff, err := xff.New(xff.Options{AllowedSubnets: nil, Debug: false})
 		if err != nil {
-			sw.logger.WithError(err).Error("xff_creation_failed")
+			sw.logger.Error("xff creation failed", slog.Any("error", err))
 			return err
 		}
 
@@ -150,7 +149,7 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 	// Create the GRPC server
 	sw.grpcServer, err = createGRPCServer(&cfg, sw.metrics.Registry)
 	if err != nil {
-		log.WithError(err).Error("error creating grpc server")
+		sw.logger.Error("error creating grpc server", slog.Any("error", err))
 		return err
 	}
 
@@ -211,12 +210,12 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 	for {
 		select {
 		case sig := <-sigChan:
-			sw.logger.WithField("signal", sig.String()).Info("caught_signal")
+			sw.logger.Info("caught signal", slog.String("sig", sig.String()))
 			cancelRun()
 
 		case err := <-doneChan:
 			if err != nil {
-				sw.logger.WithError(err).Error("server_termination_error")
+				sw.logger.Error("server termination error", slog.Any("error", err))
 			}
 
 			return nil

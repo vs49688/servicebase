@@ -15,32 +15,31 @@
 package multilistener
 
 import (
+	"log/slog"
 	"net"
 	"os"
-
-	log "github.com/sirupsen/logrus"
 )
 
-func Listen(cfg *ListenConfig, logger *log.Logger) (net.Listener, error) {
-	logEntry := logger.WithFields(log.Fields{
-		"bind_address":       cfg.BindAddress,
-		"bind_network":       cfg.BindNetwork,
-		"socket_permissions": cfg.SocketPermissions.String(),
-	})
+func Listen(cfg *ListenConfig, logger *slog.Logger) (net.Listener, error) {
+	logger = logger.With(
+		slog.String("bind_address", cfg.BindAddress),
+		slog.String("bind_network", cfg.BindNetwork),
+		slog.String("socket_permissions", cfg.SocketPermissions.String()),
+	)
 
 	ln, err := net.Listen(cfg.BindNetwork, cfg.BindAddress)
 	if err != nil {
-		logEntry.WithError(err).Error("error listening")
+		logger.Error("error listening", slog.Any("error", err))
 		return nil, err
 	}
 
 	if _, ok := ln.(*net.UnixListener); ok {
-		logEntry.Trace("fixing socket permissions")
+		logger.Debug("fixing socket permissions")
 
 		// Can't use the *os.File returned from the listener, it doesn't work.
 		// We have to do it via name.
 		if err := os.Chmod(cfg.BindAddress, cfg.SocketPermissions); err != nil {
-			logEntry.WithError(err).Error("unable to chmod socket")
+			logger.Error("unable to chmod socket", slog.Any("error", err))
 			return nil, err
 		}
 	}

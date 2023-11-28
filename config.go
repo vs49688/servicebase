@@ -17,6 +17,7 @@ package servicebase
 import (
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
+	"log/slog"
 	"strconv"
 	"time"
 )
@@ -54,13 +55,14 @@ type GRPCConfig struct {
 }
 
 type ServiceConfig struct {
-	LogLevel         string        `json:"log_level,omitempty"`
+	LogLevel         slog.Level    `json:"log_level,omitempty"`
 	LogFormat        string        `json:"log_format,omitempty"`
 	ShutdownTimeout  time.Duration `json:"shutdown_timeout"`
 	HTTP             HTTPConfig    `json:"http"`
 	GRPC             GRPCConfig    `json:"grpc"`
 	DisableRequestID bool          `json:"disable_request_id"`
 
+	logLevel            string
 	hasDisableRequestID bool
 }
 
@@ -236,7 +238,7 @@ func (cfg *GRPCConfig) Flags() []cli.Flag {
 
 func DefaultServiceConfig() ServiceConfig {
 	return ServiceConfig{
-		LogLevel:        "info",
+		LogLevel:        slog.LevelInfo,
 		LogFormat:       "text",
 		ShutdownTimeout: 10 * time.Second,
 		HTTP:            DefaultHTTPConfig(),
@@ -252,8 +254,12 @@ func (cfg *ServiceConfig) Flags() []cli.Flag {
 			Name:        "log-level",
 			Usage:       "logging level",
 			EnvVars:     []string{"SERVICE_LOG_LEVEL"},
-			Destination: &cfg.LogLevel,
-			Value:       def.LogLevel,
+			Destination: &cfg.logLevel,
+			Value:       def.logLevel,
+			Action: func(context *cli.Context, s string) error {
+				cfg.logLevel = s
+				return cfg.LogLevel.UnmarshalText([]byte(s))
+			},
 		},
 		&cli.StringFlag{
 			Name:        "log-format",
@@ -308,7 +314,10 @@ func MergeString(left, right string) string {
 }
 
 func MergeServiceConfig(left, right *ServiceConfig) *ServiceConfig {
-	left.LogLevel = MergeString(left.LogLevel, right.LogLevel)
+	if right.logLevel != "" {
+		left.LogLevel = right.LogLevel
+	}
+
 	left.LogFormat = MergeString(left.LogFormat, right.LogFormat)
 
 	if right.ShutdownTimeout != 0 {

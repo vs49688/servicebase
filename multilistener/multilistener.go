@@ -16,13 +16,13 @@ package multilistener
 
 import (
 	"context"
+	"log/slog"
 	"reflect"
 
-	log "github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
 )
 
-func New(logger *log.Logger) *MultiListener {
+func New(logger *slog.Logger) *MultiListener {
 	l := &MultiListener{
 		logger: logger,
 	}
@@ -66,7 +66,7 @@ func (l *MultiListener) Serve(ctx context.Context) error {
 	idx, value, _ := reflect.Select(allCases)
 	if idx == contextIndex {
 		// Context closed, flag and wait for our servers to close.
-		l.logger.Trace("context closed")
+		l.logger.DebugContext(ctx, "context closed")
 	} else {
 		// One of our servers terminated. Capture its error and kill the rest.
 		serverErrors[idx] = l.handleServerTermination(idx, value)
@@ -76,7 +76,7 @@ func (l *MultiListener) Serve(ctx context.Context) error {
 	// Cancel all the servers upon a server error
 	cancel()
 
-	l.logger.Trace("waiting for death")
+	l.logger.DebugContext(ctx, "waiting for death")
 
 	// Pass 2: Wait for the rest to die.
 	for numActive > 0 {
@@ -106,7 +106,7 @@ func (l *MultiListener) Close() error {
 	for _, srv := range l.servers {
 		err := srv.Close()
 		if err != nil {
-			srv.Log().WithError(err).Error("error closing server")
+			srv.Log().Error("error closing server", slog.Any("error", err))
 		}
 
 		errs = append(errs, err)

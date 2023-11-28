@@ -8,7 +8,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
 	github.com/prometheus/client_golang v1.17.0
 	github.com/sebest/xff v0.0.0-20210106013422-671bd2870b3a
-	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
 	go.uber.org/multierr v1.11.0

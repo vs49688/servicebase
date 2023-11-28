@@ -18,8 +18,7 @@ import (
 	"context"
 	"io"
 	"io/fs"
-
-	log "github.com/sirupsen/logrus"
+	"log/slog"
 )
 
 type ListenConfig struct {
@@ -33,10 +32,10 @@ type wrapper interface {
 
 	Serve(ctx context.Context) error
 
-	Log() *log.Entry
+	Log() *slog.Logger
 }
 
 type MultiListener struct {
-	logger  *log.Logger
+	logger  *slog.Logger
 	servers []wrapper
 }

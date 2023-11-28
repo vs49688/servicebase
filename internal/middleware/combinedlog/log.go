@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"log/slog"
 )
 
 type combinedLogRecord struct {
@@ -35,7 +35,7 @@ type combinedLogRecord struct {
 	httpUserAgent         string
 }
 
-func (r *combinedLogRecord) log(ctx context.Context, logger *log.Logger) {
+func (r *combinedLogRecord) log(ctx context.Context, logger *slog.Logger) {
 	var httpReferrer string
 	if r.httpReferrer == "" {
 		httpReferrer = "-"
@@ -70,13 +70,14 @@ func (r *combinedLogRecord) log(ctx context.Context, logger *log.Logger) {
 		tzsign, tzhour, tzmin,
 	)
 
-	logger.WithContext(ctx).Infof("%s - - [%s] \"%s %s %s\" %d %d \"%s\" \"%s\"\n",
+	msg := fmt.Sprintf("%s - - [%s] \"%s %s %s\" %d %d \"%s\" \"%s\"\n",
 		r.ip, timeString,
 		r.method, r.uri, r.protocol,
 		r.status, r.responseBytes,
 		httpReferrer,
 		httpUserAgent,
 	)
+	logger.InfoContext(ctx, msg)
 }
 
 func (r *combinedLogRecord) Write(p []byte) (int, error) {
@@ -92,10 +93,10 @@ func (r *combinedLogRecord) WriteHeader(status int) {
 
 type combinedLoggingHandler struct {
 	handler http.Handler
-	logger  *log.Logger
+	logger  *slog.Logger
 }
 
-func NewHandler(handler http.Handler, logger *log.Logger) http.Handler {
+func NewHandler(handler http.Handler, logger *slog.Logger) http.Handler {
 	return &combinedLoggingHandler{
 		handler: handler,
 		logger:  logger,

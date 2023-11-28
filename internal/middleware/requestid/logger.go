@@ -15,33 +15,32 @@
 package requestid
 
 import (
-	log "github.com/sirupsen/logrus"
+	"context"
+	"log/slog"
 )
 
 const (
 	DefaultLoggerFieldName = "request_id"
 )
 
-type requestIDLogger struct {
+type slogHandler struct {
+	slog.Handler
 	field string
 }
 
-func NewLoggerHook(field string) log.Hook {
-	return &requestIDLogger{field: field}
-}
+func (h *slogHandler) Handle(ctx context.Context, r slog.Record) error {
+	handler := h.Handler
 
-func (l *requestIDLogger) Levels() []log.Level {
-	return log.AllLevels
-}
-
-func (l *requestIDLogger) Fire(entry *log.Entry) error {
-	if entry.Context == nil || l.field == "" {
-		return nil
+	if id := FromContext(ctx); id != "" {
+		handler = h.WithAttrs([]slog.Attr{slog.String(h.field, id)})
 	}
 
-	if id := FromContext(entry.Context); id != "" {
-		entry.Data[l.field] = id
-	}
+	return handler.Handle(ctx, r)
+}
 
-	return nil
+func NewLogHandler(field string, h slog.Handler) slog.Handler {
+	return &slogHandler{
+		Handler: h,
+		field:   field,
+	}
 }

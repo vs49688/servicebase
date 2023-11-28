@@ -16,8 +16,8 @@ package servicebase
 
 import (
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"io/fs"
+	"log/slog"
 	"net"
 	"net/http"
 )
@@ -58,24 +58,23 @@ func MakeStaticHandler(payload []byte, contentType string) http.Handler {
 	})
 }
 
-func listen(cfg *ListenConfig, logger *log.Logger) (net.Listener, error) {
+func listen(cfg *ListenConfig, logger *slog.Logger) (net.Listener, error) {
 	ln, err := net.Listen(cfg.BindNetwork, cfg.BindAddress)
 	if err != nil {
 		return nil, err
 	}
 
 	if unix, ok := ln.(*net.UnixListener); ok {
-		logger.WithField("permissions", fs.FileMode(cfg.SocketPermissions).String()).
-			Debug("fixing socket permissions")
+		logger.Debug("fixing socket permissions", slog.String("permissions", fs.FileMode(cfg.SocketPermissions).String()))
 
 		socket, err := unix.File()
 		if err != nil {
-			logger.WithError(err).Error("unable to retrieve socket")
+			logger.Error("unable to retrieve socket", slog.Any("error", err))
 			return nil, err
 		}
 
 		if err := socket.Chmod(fs.FileMode(cfg.SocketPermissions)); err != nil {
-			logger.WithError(err).Error("unable to chmod socket")
+			logger.Error("unable to chmod socket", slog.Any("error", err))
 			return nil, err
 		}
 	}

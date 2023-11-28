@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
 	"github.com/vs49688/servicebase"
@@ -15,7 +15,7 @@ import (
 type sampleService struct {
 	pb.UnimplementedTeapotServer
 
-	logger *log.Logger
+	logger *slog.Logger
 }
 
 func (d *sampleService) Close(_ context.Context) error {
@@ -30,7 +30,7 @@ func (d *sampleService) GetHealth(_ context.Context) (*servicebase.GetHealthResp
 
 func (d *sampleService) AmIATeapot(ctx context.Context, _ *pb.AmIATeapotRequest) (*pb.AmIATeapotResponse, error) {
 	// grpcurl -plaintext localhost:50051 sample.Teapot.AmIATeapot
-	d.logger.WithContext(ctx).Info("im a teapot")
+	d.logger.InfoContext(ctx, "im a teapot")
 	return &pb.AmIATeapotResponse{Answer: true}, nil
 }
 
@@ -67,7 +67,7 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("fatal error", slog.Any("error", err))
 		os.Exit(1)
 	}
 }

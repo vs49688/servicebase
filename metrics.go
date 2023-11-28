@@ -15,10 +15,11 @@
 package servicebase
 
 import (
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
+	"log/slog"
 	"net"
 	"net/http"
 )
@@ -28,7 +29,15 @@ type Metrics struct {
 	requests *prometheus.CounterVec
 }
 
-func configureMetrics(logger *log.Logger) (Metrics, http.Handler, error) {
+type metricsLogger struct {
+	logger *slog.Logger
+}
+
+func (m metricsLogger) Println(v ...interface{}) {
+	m.logger.Error(fmt.Sprint(v...))
+}
+
+func configureMetrics(logger *slog.Logger) (Metrics, http.Handler, error) {
 	metricsRegistry := prometheus.NewRegistry()
 
 	// Add collector for Go stats
@@ -57,7 +66,7 @@ func configureMetrics(logger *log.Logger) (Metrics, http.Handler, error) {
 
 	return Metrics{Registry: metricsRegistry, requests: metricRequests}, promhttp.InstrumentMetricHandler(
 		metricsRegistry,
-		promhttp.HandlerFor(metricsRegistry, promhttp.HandlerOpts{ErrorLog: logger}),
+		promhttp.HandlerFor(metricsRegistry, promhttp.HandlerOpts{ErrorLog: metricsLogger{logger: logger}}),
 	), nil
 }
 

@@ -17,16 +17,16 @@ package multilistener
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net"
 
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
 type grpcWrapper struct {
-	srv      *grpc.Server
-	lis      net.Listener
-	logEntry *log.Entry
+	srv    *grpc.Server
+	lis    net.Listener
+	logger *slog.Logger
 }
 
 func (w *grpcWrapper) Serve(ctx context.Context) error {
@@ -57,8 +57,8 @@ func (w *grpcWrapper) Serve(ctx context.Context) error {
 
 }
 
-func (w *grpcWrapper) Log() *log.Entry {
-	return w.logEntry
+func (w *grpcWrapper) Log() *slog.Logger {
+	return w.logger
 }
 
 func (w *grpcWrapper) Close() error {
@@ -73,9 +73,9 @@ func (l *MultiListener) ListenGRPC(cfg *ListenConfig, srv *grpc.Server) error {
 	}
 
 	l.servers = append(l.servers, &grpcWrapper{
-		srv:      srv,
-		lis:      lis,
-		logEntry: l.logger.WithField("index", len(l.servers)),
+		srv:    srv,
+		lis:    lis,
+		logger: l.logger.With(slog.Int("index", len(l.servers))),
 	})
 	return nil
 }
