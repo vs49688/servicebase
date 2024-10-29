@@ -19,6 +19,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"path"
@@ -144,6 +145,19 @@ func RunService(ctx context.Context, cfg ServiceConfig, factory ServiceFactory) 
 	var healthRouter *mux.Route
 	if !cfg.HTTP.DisableHealth {
 		healthRouter = sw.serviceRouter.Path("/health").Methods(http.MethodGet)
+	}
+
+	if cfg.HTTP.EnableDebug {
+		debugRouter := sw.serviceRouter.PathPrefix("/debug").Subrouter()
+		debugRouter.Path("/pprof/cmdline").HandlerFunc(pprof.Cmdline).Methods(http.MethodGet)
+		debugRouter.Path("/pprof/profile").HandlerFunc(pprof.Profile).Methods(http.MethodGet)
+		debugRouter.Path("/pprof/symbol").HandlerFunc(pprof.Symbol).Methods(http.MethodGet)
+		debugRouter.Path("/pprof/trace").HandlerFunc(pprof.Trace).Methods(http.MethodGet)
+		debugRouter.PathPrefix("/pprof/").HandlerFunc(pprof.Index).Methods(http.MethodGet)
+		debugRouter.Path("/pprof").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Location", "/debug/pprof/")
+			w.WriteHeader(http.StatusPermanentRedirect)
+		}).Methods(http.MethodGet)
 	}
 
 	// Create the GRPC server
