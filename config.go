@@ -37,11 +37,13 @@ type HTTPConfig struct {
 	DisableXFF        bool          `json:"disable_xff,omitempty"`
 	DisableMetrics    bool          `json:"disable_metrics"`
 	DisableHealth     bool          `json:"disable_health"`
+	EnableDebug       bool          `json:"enable_debug"`
 	ReadHeaderTimeout time.Duration `json:"read_header_timeout"`
 
 	hasDisableXFF     bool
 	hasDisableMetrics bool
 	hasDisableHealth  bool
+	hasEnableDebug    bool
 }
 
 type GRPCConfig struct {
@@ -158,6 +160,17 @@ func (cfg *HTTPConfig) Flags() []cli.Flag {
 			Action: func(context *cli.Context, b bool) error {
 				cfg.DisableHealth = b
 				cfg.hasDisableHealth = true
+				return nil
+			},
+		},
+		&cli.BoolFlag{
+			Name:    "http-enable-debug",
+			Usage:   "enable /debug endpoints",
+			EnvVars: []string{"HTTP_ENABLE_DEBUG"},
+			Value:   def.EnableDebug,
+			Action: func(context *cli.Context, b bool) error {
+				cfg.EnableDebug = b
+				cfg.hasEnableDebug = true
 				return nil
 			},
 		},
