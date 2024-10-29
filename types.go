@@ -42,7 +42,7 @@ func (mode *FileMode) UnmarshalText(data []byte) error {
 		return fmt.Errorf("invalid socket permissions: %v", string(data))
 	}
 
-	*mode = FileMode(perms)
+	*mode = FileMode(perms) //#nosec G115 - fuck off integer overflow
 	return nil
 }
 
