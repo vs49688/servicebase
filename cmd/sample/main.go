@@ -8,8 +8,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/vs49688/servicebase"
-	"github.com/vs49688/servicebase/cmd/sample/pb"
+	"git.vs49688.net/zane/servicebase"
+	"git.vs49688.net/zane/servicebase/cmd/sample/pb"
 )
 
 type sampleService struct {

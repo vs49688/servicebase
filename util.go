@@ -3,7 +3,7 @@ package servicebase
 import (
 	"context"
 
-	"github.com/vs49688/servicebase/internal/middleware/requestid"
+	"git.vs49688.net/zane/servicebase/internal/middleware/requestid"
 )
 
 func GetRequestID(ctx context.Context) string {

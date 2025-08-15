@@ -1,4 +1,4 @@
-module github.com/vs49688/servicebase
+module git.vs49688.net/zane/servicebase
 
 go 1.23.0
 

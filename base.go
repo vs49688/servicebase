@@ -29,9 +29,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sebest/xff"
 
-	"github.com/vs49688/servicebase/internal/middleware/combinedlog"
-	"github.com/vs49688/servicebase/internal/middleware/requestid"
-	"github.com/vs49688/servicebase/multilistener"
+	"git.vs49688.net/zane/servicebase/internal/middleware/combinedlog"
+	"git.vs49688.net/zane/servicebase/internal/middleware/requestid"
+	"git.vs49688.net/zane/servicebase/multilistener"
 )
 
 func closeService(ctx context.Context, impl Service, timeout time.Duration, logger *slog.Logger) {

@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/vs49688/servicebase/internal/middleware/requestid"
+	"git.vs49688.net/zane/servicebase/internal/middleware/requestid"
 )
 
 func createGRPCServer(cfg *ServiceConfig, registry *prometheus.Registry) (*grpc.Server, error) {

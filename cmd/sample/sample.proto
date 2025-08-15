@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package sample;
 
-option go_package = "github.com/vs49688/servicebase/cmd/empty/pb";
+option go_package = "git.vs49688.net/zane/servicebase/cmd/empty/pb";
 
 message AmIATeapotRequest {}
 

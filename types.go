@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/vs49688/servicebase/multilistener"
+	"git.vs49688.net/zane/servicebase/multilistener"
 	"google.golang.org/grpc"
 	"io/fs"
 	"log/slog"
